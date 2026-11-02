@@ -4,12 +4,16 @@
 
 An interactive video workbench for turning DINO subtask candidates into human-reviewed, frame-accurate annotations for GR00T. The centerpiece is the **web reviewer**: watch the recording, inspect each boundary, split or relabel intervals, mark unclear activity, delete unwanted intervals, and export a portable review.
 
+**[Open the interactive demo](https://hopper617.github.io/TagData/)**
+
+![Interactive subtask review workbench](docs/workbench.en.png)
+
 ```text
 DINO candidates → assistant visual inspection → interactive human review
                → sparse annotations + expert-only action-window masks
 ```
 
-The checked-in demo contains **two synthetic episodes with three camera views**. It contains no robot recordings, state/action data or model weights. Deployment target: [GitHub Pages demo](https://hopper617.github.io/TagData/) (available once Pages is enabled and deployed).
+The live demo contains **two synthetic episodes with three camera views**. It contains no robot recordings, state/action data or model weights. All edits stay in your browser; export JSON to keep a portable copy.
 
 ## Try the workbench
 
