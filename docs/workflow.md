@@ -71,4 +71,4 @@ The complete JSON includes global definitions and is the input to training prepa
 
 ## 6. Prepare training inputs
 
-Follow [GR00T integration](gr00t.md). Human review establishes semantic labels, not whether actions were expert demonstrations. DAgger action supervision must additionally use the intervention mask. Planner training can use retained labeled images even when the robot was not under expert control.
+Follow the [training integration example](gr00t.md). Human review establishes semantic labels, not whether actions were expert demonstrations. DAgger action supervision must additionally use the intervention mask. Planner training can use retained labeled images even when the robot was not under expert control.

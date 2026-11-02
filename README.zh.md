@@ -1,8 +1,8 @@
-# GR00T 子任务标注工作台
+# TagData · 子任务标注工作台
 
-[English](README.md) · [完整流程](docs/workflow.zh.md) · [助手协作](docs/assistant.md) · [GR00T 接入](docs/gr00t.zh.md)
+[English](README.md) · [完整流程](docs/workflow.zh.md) · [助手协作](docs/assistant.md) · [训练接入示例](docs/gr00t.zh.md)
 
-把 DINO 候选标注整理成人工审核、精确到帧的 GR00T 子任务标注。核心是**可运行的交互网页**：观看录像、核对任务边界、切分或修改片段、标记没有明确目的的活动、删除不需要的片段，再导出完整审核结果。
+用于回看机器人示教录像、划分子任务并逐段人工审核的交互式标注工具，支持从模型候选标注或未标注录像开始。核心是**可运行的交互网页**：观看录像、核对任务边界、切分或修改片段、标记没有明确目的的活动、删除不需要的片段，再导出完整审核结果。
 
 **[打开在线标注工作台](https://hopper617.github.io/TagData/)**
 
@@ -67,9 +67,9 @@ python3 -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-[完整流程](docs/workflow.zh.md)介绍 DINO、三视角截图和助手协作；[数据格式](docs/format.md)解释审核文件；[GR00T 接入](docs/gr00t.zh.md)介绍生成训练包和接入采样器。[12 条数据案例](docs/case-study.md)保留了实际流程及核对后的汇总数字。
+[完整流程](docs/workflow.zh.md)介绍 DINO、三视角截图和助手协作；[数据格式](docs/format.md)解释审核文件；[训练接入示例](docs/gr00t.zh.md)演示生成训练包和接入采样器。[12 条数据案例](docs/case-study.md)保留了实际流程及核对后的汇总数字。
 
-网页导出的文件是**标注结果，还不是可直接训练的数据集**。训练端需要处理稀疏边界、排除区间和完整动作窗口。DAgger 动作监督仅使用 `intervention.valid AND intervention.mode in {2,3}`。仓库提供最小参考适配代码，需要接入自己的 GR00T 加载器和采样器。
+网页导出的文件是**标注结果，还不是可直接训练的数据集**。训练端需要处理稀疏边界、排除区间和完整动作窗口。DAgger 动作监督仅使用 `intervention.valid AND intervention.mode in {2,3}`。仓库提供最小参考适配代码，需要接入自己的数据加载器和采样器，具体用法见训练接入示例。
 
 ## 验证与上线
 
@@ -82,4 +82,4 @@ python -m unittest discover -s tests -p 'test_*.py' -v
 
 GitHub Pages 部署：在 **Settings → Pages → Source** 选择 **GitHub Actions**，运行仓库内的 “Deploy demo” 工作流。只发布 `web/` 目录。真实审核报告放在已忽略的 `reports/` 目录，推送前检查暂存文件。
 
-采用 Apache-2.0，署名信息见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。这是在自定义 Isaac-GR00T 工作流中整理出的社区标注工具。
+采用 Apache-2.0，署名信息见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。

@@ -1,8 +1,8 @@
-# GR00T Subtask Annotation
+# TagData · Subtask Annotation
 
-[简体中文](README.zh.md) · [Workflow](docs/workflow.md) · [Assistant collaboration](docs/assistant.md) · [GR00T integration](docs/gr00t.md)
+[简体中文](README.zh.md) · [Workflow](docs/workflow.md) · [Assistant collaboration](docs/assistant.md) · [Training integration](docs/gr00t.md)
 
-An interactive video workbench for turning DINO subtask candidates into human-reviewed, frame-accurate annotations for GR00T. The centerpiece is the **web reviewer**: watch the recording, inspect each boundary, split or relabel intervals, mark unclear activity, delete unwanted intervals, and export a portable review.
+An interactive video workbench for segmenting robot demonstrations into human-reviewed, frame-accurate subtasks. Start from model-generated candidates or unlabeled recordings. The centerpiece is the **web reviewer**: watch the recording, inspect each boundary, split or relabel intervals, mark unclear activity, delete unwanted intervals, and export a portable review.
 
 **[Open the interactive demo](https://hopper617.github.io/TagData/)**
 
@@ -67,9 +67,9 @@ python3 -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-[Workflow](docs/workflow.md) covers DINO candidates, three-view contact sheets and assistant collaboration. [Data format](docs/format.md) defines the review JSON. [GR00T integration](docs/gr00t.md) explains how to package labels and consume masks. The [12-episode case study](docs/case-study.md) documents the original workflow and verified aggregate counts.
+[Workflow](docs/workflow.md) covers DINO candidates, three-view contact sheets and assistant collaboration. [Data format](docs/format.md) defines the review JSON. [Training integration](docs/gr00t.md) gives a worked example of packaging labels and consuming masks. The [12-episode case study](docs/case-study.md) documents the original workflow and verified aggregate counts.
 
-Review exports are **annotations, not a ready-to-train dataset**. A training consumer must honor sparse boundaries, exclusions and the entire action horizon. DAgger action supervision uses `intervention.valid AND intervention.mode in {2,3}`. The included reference adapter needs integration into your GR00T loader and sampler; it does not change an upstream installation automatically.
+Review exports are **annotations, not a ready-to-train dataset**. A training consumer must honor sparse boundaries, exclusions and the entire action horizon. DAgger action supervision uses `intervention.valid AND intervention.mode in {2,3}`. The included reference adapter needs integration into your dataset loader and sampler; follow the training guide for a concrete example.
 
 ## Checks and deployment
 
@@ -82,4 +82,4 @@ python -m unittest discover -s tests -p 'test_*.py' -v
 
 For Pages: select **Settings → Pages → Source → GitHub Actions** and run the bundled “Deploy demo” workflow. It publishes only `web/`. Keep local reports under the ignored `reports/` directory and inspect staged files before pushing.
 
-Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for attribution. This is a community annotation tool developed alongside a custom Isaac-GR00T workflow.
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for attribution.

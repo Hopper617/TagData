@@ -12,6 +12,7 @@ const $ = (id) => document.getElementById(id);
 const copy = {
   en: {
     title: "Subtask Annotation",
+    tagline: "Video → Segments → Human review",
     synthetic:
       "SYNTHETIC DEMO · Illustrative animation, not robot recordings. Changes stay in your browser; export JSON to keep a portable copy.",
     episodes: "Episodes",
@@ -79,6 +80,7 @@ const copy = {
   },
   zh: {
     title: "子任务标注工作台",
+    tagline: "视频回看 → 片段划分 → 人工审核",
     synthetic:
       "合成演示 · 动画示意，非机器人真实录像。修改只保存在当前浏览器，请导出 JSON 备份。",
     episodes: "Episode 列表",
