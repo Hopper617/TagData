@@ -1,0 +1,5 @@
+-r requirements.txt
+torch>=2.6
+transformers>=4.46,<5
+torchcodec>=0.2
+# Match torchcodec to your PyTorch and FFmpeg versions; see docs/workflow.md.

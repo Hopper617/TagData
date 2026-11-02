@@ -1,0 +1,4 @@
+# Optional: training-mask packaging and contact sheets. Web/server need only Python 3.10+.
+numpy>=1.24
+Pillow>=10
+pyarrow>=14

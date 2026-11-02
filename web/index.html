@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>GR00T · Subtask Annotation</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="logo">G</span>
+        <div>
+          <strong data-i18n="title">Subtask Annotation</strong
+          ><small>GR00T · DINO → Visual review → Human confirmation</small>
+        </div>
+      </div>
+      <div class="actions">
+        <a
+          href="https://github.com/Hopper617/TagData"
+          target="_blank"
+          rel="noopener"
+          >GitHub ↗</a
+        ><button id="language" aria-label="Change language">中文</button>
+      </div>
+    </header>
+    <div class="banner" id="synthetic" data-i18n="synthetic" hidden></div>
+    <main>
+      <aside>
+        <div class="section-title">
+          <span data-i18n="episodes"></span
+          ><span id="episode-count" class="pill"></span>
+        </div>
+        <p id="progress" class="muted"></p>
+        <nav id="episodes" aria-label="Episodes"></nav>
+        <div class="aside-footer">
+          <p data-i18n="localHint"></p>
+          <button id="import" data-i18n="import"></button
+          ><input
+            id="import-file"
+            type="file"
+            accept=".json,application/json"
+            hidden
+          /><button id="export" class="primary" data-i18n="export"></button
+          ><button id="export-reviewed" data-i18n="exportReviewed"></button>
+        </div>
+      </aside>
+      <section class="workspace">
+        <div class="workspace-title">
+          <div>
+            <span class="eyebrow" data-i18n="workspace"></span>
+            <h1 id="episode-title"></h1>
+          </div>
+          <span class="pill" id="episode-status"></span>
+        </div>
+        <div class="video-panel">
+          <div class="video-toolbar">
+            <div id="cameras" class="tabs"></div>
+            <span id="time-display" class="mono"></span>
+          </div>
+          <video id="video" controls playsinline preload="metadata"></video>
+          <p id="video-error" class="error" hidden></p>
+          <div class="playbar">
+            <button id="play-segment" data-i18n="playSegment"></button
+            ><button id="seek-start" data-i18n="seekStart"></button
+            ><span class="muted" data-i18n="frameHint"></span>
+          </div>
+        </div>
+        <div class="timeline-heading">
+          <strong data-i18n="timeline"></strong
+          ><label
+            ><input type="checkbox" id="show-deleted" /><span
+              data-i18n="showDeleted"
+            ></span
+          ></label>
+        </div>
+        <div
+          id="timeline"
+          class="timeline"
+          aria-label="Source frame timeline"
+        ></div>
+        <div class="timeline-labels">
+          <span>0</span><span id="duration"></span>
+        </div>
+        <div class="below">
+          <section class="segments-panel">
+            <div class="section-title">
+              <span data-i18n="segments"></span
+              ><span id="segment-count" class="muted"></span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th data-i18n="range"></th>
+                    <th data-i18n="task"></th>
+                    <th data-i18n="reviewed"></th>
+                  </tr>
+                </thead>
+                <tbody id="segments"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="editor">
+            <div class="section-title">
+              <span data-i18n="edit"></span
+              ><span id="selection" class="pill"></span>
+            </div>
+            <form id="editor-form">
+              <label
+                ><span data-i18n="task"></span
+                ><select id="task-id"></select
+              ></label>
+              <div class="frame-inputs">
+                <label
+                  ><span data-i18n="start"></span
+                  ><input
+                    id="start"
+                    type="number"
+                    step="1"
+                    min="0"
+                    required /></label
+                ><label
+                  ><span data-i18n="end"></span
+                  ><input id="end" type="number" step="1" min="1" required
+                /></label>
+              </div>
+              <label
+                ><span data-i18n="note"></span
+                ><textarea id="note" rows="2"></textarea>
+              </label>
+              <div class="checks">
+                <label
+                  ><input type="checkbox" id="excluded" /><span
+                    data-i18n="exclude"
+                  ></span></label
+                ><label
+                  ><input type="checkbox" id="reviewed" /><span
+                    data-i18n="confirmed"
+                  ></span
+                ></label>
+              </div>
+              <button
+                id="save"
+                class="primary"
+                type="submit"
+                data-i18n="save"
+              ></button>
+            </form>
+            <div class="editor-actions">
+              <button id="split" data-i18n="split"></button
+              ><button id="delete" class="danger"></button>
+            </div>
+            <p class="muted" data-i18n="deleteHint"></p>
+            <details>
+              <summary data-i18n="evidence"></summary>
+              <div id="evidence"></div>
+            </details>
+          </section>
+        </div>
+      </section>
+    </main>
+    <div id="status" role="status" aria-live="polite"></div>
+    <dialog id="conflict">
+      <h2 data-i18n="conflictTitle"></h2>
+      <p data-i18n="conflictText"></p>
+      <div class="actions">
+        <button id="keep-local" data-i18n="keepLocal"></button
+        ><button id="use-import" class="primary" data-i18n="useImport"></button>
+      </div>
+    </dialog>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

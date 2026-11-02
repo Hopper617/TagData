@@ -1,0 +1,14 @@
+GR00T Subtask Annotation
+Copyright 2026 Hopper617 contributors.
+
+This project originated in a custom Isaac-GR00T annotation workflow. The
+DINOv2 preprocessing and BiGRU head architecture follow that local workflow,
+which was developed alongside NVIDIA Isaac-GR00T (Apache-2.0):
+https://github.com/NVIDIA/Isaac-GR00T
+Isaac-GR00T base revision: d2b7e75b937e3ec9aa5dbc798f08b89692c49734.
+Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+The browser workbench, portable HTTP server, data tools and synthetic media
+are distributed under Apache-2.0. No NVIDIA model weights, DINOv2 weights,
+robot recordings, or robot state/action data are included. Referenced model
+weights retain their own licenses.

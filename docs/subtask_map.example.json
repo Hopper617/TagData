@@ -1,0 +1,36 @@
+{
+  "overall_prompt": "Clean the tabletop: dispose of the can, pick up tools, sweep, empty the dustpan, then put the tools down.",
+  "fps": 30,
+  "subtasks": [
+    {
+      "id": 0,
+      "text": "Put the can into the trash bin",
+      "zh": "把易拉罐放进垃圾桶"
+    },
+    {
+      "id": 1,
+      "text": "pick up the broom with the right hand",
+      "zh": "右手拿起扫把"
+    },
+    {
+      "id": 2,
+      "text": "pick up the dustpan with the left hand",
+      "zh": "左手拿起簸箕"
+    },
+    {
+      "id": 3,
+      "text": "sweep the debris into the dustpan",
+      "zh": "把碎屑扫进簸箕"
+    },
+    {
+      "id": 4,
+      "text": "empty the dustpan into the trash bin",
+      "zh": "把簸箕里的碎屑倒进垃圾桶"
+    },
+    {
+      "id": 5,
+      "text": "put down all tools",
+      "zh": "放下所有工具"
+    }
+  ]
+}

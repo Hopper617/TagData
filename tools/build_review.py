@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""Build a portable local review report without modifying a LeRobot v2 dataset."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+from annotations import (
+    check,
+    export_review,
+    normalize,
+    read_json,
+    read_jsonl,
+    video_path,
+    write_json,
+)
+
+VIEWS = ("base", "left_wrist", "right_wrist")
+
+
+def build(
+    dataset,
+    mapping_path,
+    output,
+    annotations=None,
+    episode_ids=None,
+    evidence_root=None,
+):
+    dataset, output = dataset.resolve(strict=True), output.resolve()
+    check(not output.exists(), "Output already exists; choose a new report directory")
+    check(
+        not output.is_relative_to(dataset) and not dataset.is_relative_to(output),
+        "Report and source dataset must use separate directories",
+    )
+    info = read_json(dataset / "meta/info.json")
+    metadata = read_jsonl(dataset / "meta/episodes.jsonl")
+    mapping = read_json(mapping_path)
+    if annotations:
+        payload = read_json(annotations)
+        if "training_subtask_definitions" not in payload:
+            payload["subtasks"] = mapping["subtasks"]
+        payload = normalize(payload)
+        check(payload["fps"] == info["fps"], "Annotation/source FPS mismatch")
+        check(
+            {s["id"]: s["text"] for s in payload["training_subtask_definitions"]}
+            == {s["id"]: s["text"] for s in mapping["subtasks"] if s["id"] >= 0},
+            "Global task mapping mismatch",
+        )
+        candidates = {e["episode_index"]: e for e in payload["episodes"]}
+    else:
+        payload = dict(fps=info["fps"], subtasks=mapping["subtasks"])
+        candidates = {
+            e["episode_index"]: dict(
+                e,
+                segments=e.get("sub_tasks") or [dict(id=-1, start=0, end=e["length"])],
+            )
+            for e in metadata
+        }
+    originals = {e["episode_index"]: e for e in metadata}
+    selected = set(candidates) if episode_ids is None else set(episode_ids)
+    check(
+        selected and selected <= set(candidates) and selected <= set(originals),
+        "Unknown or empty episode selection",
+    )
+    payload["episodes"] = [candidates[i] for i in sorted(selected)]
+    for ep in payload["episodes"]:
+        check(
+            ep["length"] == originals[ep["episode_index"]]["length"],
+            "Annotation/source length mismatch",
+        )
+    payload["fps"] = info["fps"]
+    payload["overall_prompt"] = mapping.get("overall_prompt", "")
+    payload["source_dataset"] = dataset.name
+    payload["synthetic"] = False
+    # Hash the root to isolate browser drafts; do not expose workstation paths.
+    payload["project_id"] = (
+        "local-"
+        + hashlib.sha256(
+            json.dumps(
+                [
+                    str(dataset),
+                    info["fps"],
+                    [(e["episode_index"], e["length"]) for e in metadata],
+                    mapping["subtasks"],
+                ],
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()[:24]
+    )
+    payload = normalize(payload)
+    assets = {}
+    if annotations:
+        evidence_root = (evidence_root or annotations.parent).resolve(strict=True)
+
+        def evidence_asset(path):
+            candidate = Path(path)
+            candidate = (
+                candidate if candidate.is_absolute() else evidence_root / candidate
+            ).resolve()
+            if (
+                not candidate.is_relative_to(evidence_root)
+                or not candidate.is_file()
+                or candidate.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp")
+            ):
+                return None
+            relative = (
+                "evidence/"
+                + hashlib.sha256(candidate.read_bytes()).hexdigest()[:20]
+                + candidate.suffix.lower()
+            )
+            assets[relative] = candidate
+            return relative
+
+        for ep in payload["episodes"]:
+            for s in ep["segments"]:
+                thumbnail = (
+                    evidence_asset(s.pop("thumbnail")) if s.get("thumbnail") else None
+                )
+                if thumbnail:
+                    s["thumbnail"] = thumbnail
+                links = []
+                for link in s.get("evidence_links", []):
+                    asset = evidence_asset(link["path"])
+                    if asset:
+                        links.append(
+                            dict(label=link.get("label", "Evidence"), path=asset)
+                        )
+                s["evidence_links"] = links
+    links = []
+    for ep in payload["episodes"]:
+        ep["video_paths"] = {}
+        for view in VIEWS:
+            source = video_path(dataset, info, ep["episode_index"], view).resolve(
+                strict=True
+            )
+            check(
+                source.is_relative_to((dataset / "videos").resolve()),
+                "Video must be under the dataset video root",
+            )
+            relative = Path("media") / f"episode_{ep['episode_index']:06d}_{view}.mp4"
+            links.append((relative, source))
+            ep["video_paths"][view] = relative.as_posix()
+    # Outputs contain only their own metadata/static files and links to read-only videos.
+    output.mkdir(parents=True)
+    frontend = Path(__file__).resolve().parents[1] / "web"
+    for name in ("index.html", "style.css", "model.js", "app.js"):
+        shutil.copyfile(frontend / name, output / name)
+    (output / "media").mkdir()
+    for relative, source in links:
+        (output / relative).symlink_to(source)
+    if assets:
+        (output / "evidence").mkdir()
+        for relative, source in assets.items():
+            shutil.copyfile(source, output / relative)
+    write_json(output / "project.json", export_review(payload))
+    return output
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset", type=Path, required=True)
+    parser.add_argument("--subtask-map", type=Path, required=True)
+    parser.add_argument(
+        "--annotations",
+        type=Path,
+        help="DINO summary or v3 review JSON; confirmation states are preserved",
+    )
+    parser.add_argument("--episodes", type=int, nargs="+")
+    parser.add_argument(
+        "--evidence-root",
+        type=Path,
+        help="Copy referenced images only from this root (defaults to annotation file directory)",
+    )
+    parser.add_argument("--output-dir", type=Path, required=True)
+    args = parser.parse_args()
+    print(
+        build(
+            args.dataset,
+            args.subtask_map,
+            args.output_dir,
+            args.annotations,
+            args.episodes,
+            args.evidence_root,
+        )
+    )
+    print(
+        "Serve with: python tools/serve.py --directory REPORT --video-root DATASET/videos"
+    )
+
+
+if __name__ == "__main__":
+    main()

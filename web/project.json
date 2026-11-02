@@ -1,0 +1,315 @@
+{
+  "schema_version": 3,
+  "project_id": "synthetic-clean-table-v1",
+  "synthetic": true,
+  "fps": 30,
+  "source_dataset": "synthetic-demo",
+  "overall_prompt": "Clean the tabletop: dispose of the can, pick up tools, sweep, empty the dustpan, then put the tools down.",
+  "subtasks": [
+    {
+      "id": 0,
+      "text": "Put the can into the trash bin",
+      "zh": "把易拉罐放进垃圾桶"
+    },
+    {
+      "id": 1,
+      "text": "pick up the broom with the right hand",
+      "zh": "右手拿起扫把"
+    },
+    {
+      "id": 2,
+      "text": "pick up the dustpan with the left hand",
+      "zh": "左手拿起簸箕"
+    },
+    {
+      "id": 3,
+      "text": "sweep the debris into the dustpan",
+      "zh": "把碎屑扫进簸箕"
+    },
+    {
+      "id": 4,
+      "text": "empty the dustpan into the trash bin",
+      "zh": "把簸箕里的碎屑倒进垃圾桶"
+    },
+    {
+      "id": 5,
+      "text": "put down all tools",
+      "zh": "放下所有工具"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_index": 0,
+      "length": 720,
+      "video_paths": {
+        "base": "media/episode_000000_base.mp4",
+        "left_wrist": "media/episode_000000_left_wrist.mp4",
+        "right_wrist": "media/episode_000000_right_wrist.mp4"
+      },
+      "segments": [
+        {
+          "id": 0,
+          "start": 0,
+          "end": 90,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "Put the can into the trash bin",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": -1,
+          "start": 90,
+          "end": 105,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "Unclear purpose / waiting / transition",
+          "deleted": false,
+          "excluded": true
+        },
+        {
+          "id": 1,
+          "start": 105,
+          "end": 195,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "pick up the broom with the right hand",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 2,
+          "start": 195,
+          "end": 285,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "pick up the dustpan with the left hand",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 3,
+          "start": 285,
+          "end": 465,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "sweep the debris into the dustpan",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 4,
+          "start": 465,
+          "end": 555,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "empty the dustpan into the trash bin",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": -1,
+          "start": 555,
+          "end": 600,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "Unclear purpose / waiting / transition",
+          "deleted": false,
+          "excluded": true
+        },
+        {
+          "id": 5,
+          "start": 600,
+          "end": 720,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "put down all tools",
+          "deleted": false,
+          "excluded": false
+        }
+      ],
+      "deleted_intervals": [],
+      "retained_frames": 720
+    },
+    {
+      "episode_index": 1,
+      "length": 720,
+      "video_paths": {
+        "base": "media/episode_000001_base.mp4",
+        "left_wrist": "media/episode_000001_left_wrist.mp4",
+        "right_wrist": "media/episode_000001_right_wrist.mp4"
+      },
+      "segments": [
+        {
+          "id": 0,
+          "start": 0,
+          "end": 90,
+          "reviewed": true,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "Put the can into the trash bin",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 1,
+          "start": 105,
+          "end": 195,
+          "reviewed": true,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "pick up the broom with the right hand",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 2,
+          "start": 195,
+          "end": 285,
+          "reviewed": true,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "pick up the dustpan with the left hand",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 3,
+          "start": 285,
+          "end": 465,
+          "reviewed": true,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "sweep the debris into the dustpan",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": 4,
+          "start": 465,
+          "end": 555,
+          "reviewed": true,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "empty the dustpan into the trash bin",
+          "deleted": false,
+          "excluded": false
+        },
+        {
+          "id": -1,
+          "start": 555,
+          "end": 600,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "Unclear purpose / waiting / transition",
+          "deleted": false,
+          "excluded": true
+        },
+        {
+          "id": 5,
+          "start": 600,
+          "end": 720,
+          "reviewed": true,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "text": "put down all tools",
+          "deleted": false,
+          "excluded": false
+        }
+      ],
+      "deleted_intervals": [
+        {
+          "id": -1,
+          "start": 90,
+          "end": 105,
+          "reviewed": false,
+          "reason": "Synthetic candidate. Inspect both boundaries; these are not measured robot actions.",
+          "boundary_uncertainty_frames": 8,
+          "deleted": true,
+          "excluded": true,
+          "excluded_before_delete": true,
+          "text": "Unclear purpose / waiting / transition"
+        }
+      ],
+      "retained_frames": 705
+    }
+  ],
+  "training_subtask_definitions": [
+    {
+      "id": 0,
+      "text": "Put the can into the trash bin",
+      "zh": "把易拉罐放进垃圾桶"
+    },
+    {
+      "id": 1,
+      "text": "pick up the broom with the right hand",
+      "zh": "右手拿起扫把"
+    },
+    {
+      "id": 2,
+      "text": "pick up the dustpan with the left hand",
+      "zh": "左手拿起簸箕"
+    },
+    {
+      "id": 3,
+      "text": "sweep the debris into the dustpan",
+      "zh": "把碎屑扫进簸箕"
+    },
+    {
+      "id": 4,
+      "text": "empty the dustpan into the trash bin",
+      "zh": "把簸箕里的碎屑倒进垃圾桶"
+    },
+    {
+      "id": 5,
+      "text": "put down all tools",
+      "zh": "放下所有工具"
+    }
+  ],
+  "annotation_labels": [
+    {
+      "id": 0,
+      "text": "Put the can into the trash bin",
+      "zh": "把易拉罐放进垃圾桶"
+    },
+    {
+      "id": 1,
+      "text": "pick up the broom with the right hand",
+      "zh": "右手拿起扫把"
+    },
+    {
+      "id": 2,
+      "text": "pick up the dustpan with the left hand",
+      "zh": "左手拿起簸箕"
+    },
+    {
+      "id": 3,
+      "text": "sweep the debris into the dustpan",
+      "zh": "把碎屑扫进簸箕"
+    },
+    {
+      "id": 4,
+      "text": "empty the dustpan into the trash bin",
+      "zh": "把簸箕里的碎屑倒进垃圾桶"
+    },
+    {
+      "id": 5,
+      "text": "put down all tools",
+      "zh": "放下所有工具"
+    },
+    {
+      "id": -1,
+      "text": "Unclear purpose / waiting / transition"
+    }
+  ],
+  "not_training_ready": true
+}
