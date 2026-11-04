@@ -2,15 +2,15 @@
 
 [简体中文](README.zh.md) · [Workflow](docs/workflow.md) · [Assistant collaboration](docs/assistant.md) · [Training integration](docs/gr00t.md)
 
-An interactive video workbench for segmenting robot demonstrations into human-reviewed, frame-accurate subtasks. Start from model-generated candidates or unlabeled recordings. The centerpiece is the **web reviewer**: watch the recording, inspect each boundary, split or relabel intervals, mark unclear activity, delete unwanted intervals, and export a portable review.
+TagData is an agent-first workflow for segmenting robot demonstrations. An AI agent inspects synchronized recordings, applies a project-wide task map and produces frame-level candidate JSON. A human then verifies and confirms the candidates in the existing web workbench. Start with the [agent instructions](AGENTS.md) and the [input, classification and handoff guide](docs/agent-workflow.md).
 
 **[Open the interactive demo](https://hopper617.github.io/TagData/)**
 
 ![Interactive subtask review workbench](docs/workbench.en.png)
 
 ```text
-DINO candidates → assistant visual inspection → interactive human review
-               → sparse annotations + expert-only action-window masks
+Agent visual segmentation → candidate JSON → human review in the workbench
+                          → reviewed JSON → training preparation
 ```
 
 The live demo contains **two synthetic episodes with three camera views**. It contains no robot recordings, state/action data or model weights. All edits stay in your browser; export JSON to keep a portable copy.

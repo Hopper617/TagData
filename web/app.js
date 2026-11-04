@@ -3,12 +3,14 @@ import {
   compatible,
   editSegment,
   splitSegment,
+  addSegmentAfter,
   toggleDeletion,
   exportReview,
   reviewedEpisode,
 } from "./model.js";
 
 const $ = (id) => document.getElementById(id);
+const EPISODES_PER_PAGE = 10;
 const copy = {
   en: {
     title: "Subtask Annotation",
@@ -16,6 +18,9 @@ const copy = {
     synthetic:
       "SYNTHETIC DEMO · Illustrative animation, not robot recordings. Changes stay in your browser; export JSON to keep a portable copy.",
     episodes: "Episodes",
+    previousPage: "Previous",
+    nextPage: "Next",
+    episodePages: "Episode pages",
     localHint:
       "Your videos stay local. Browser autosave is a draft — download JSON to back up or move your review.",
     import: "Import review JSON",
@@ -36,6 +41,14 @@ const copy = {
     confirmed: "I have checked this interval",
     save: "Save changes",
     split: "Split at playhead",
+    addSubtask: "+ Add subtask after selection",
+    addSubtaskHint: "Choose the task and the reserved frame range. Only this range will be relabeled; the remaining parts of the following interval will be kept.",
+    chooseTask: "Choose a subtask",
+    availableRange: "Available range in the following interval",
+    noFollowingInterval: "There is no retained interval after this selection. Split an interval first to reserve space, or restore the following deleted interval.",
+    invalidNewRange: "Enter whole-number frames within the available range, with the start before the end.",
+    add: "Add subtask",
+    cancel: "Cancel",
     delete: "Delete interval",
     restore: "Restore interval",
     deleteHint:
@@ -84,6 +97,9 @@ const copy = {
     synthetic:
       "合成演示 · 动画示意，非机器人真实录像。修改只保存在当前浏览器，请导出 JSON 备份。",
     episodes: "Episode 列表",
+    previousPage: "上一页",
+    nextPage: "下一页",
+    episodePages: "Episode 分页",
     localHint:
       "录像留在本地。浏览器自动保存的是草稿；下载 JSON 可备份审核结果，或换电脑继续。",
     import: "导入审核 JSON",
@@ -104,6 +120,14 @@ const copy = {
     confirmed: "我已核对此片段",
     save: "保存修改",
     split: "在播放位置切分",
+    addSubtask: "+ 在后方加入子任务",
+    addSubtaskHint: "选择子任务并填写预留区间的起止帧。该范围将改为新子任务，下一片段的其余部分保留。",
+    chooseTask: "请选择子任务",
+    availableRange: "下一片段中可划分的范围",
+    noFollowingInterval: "当前片段后没有可用区间。请先切分片段预留空间；如果下一片段已删除，请先恢复。",
+    invalidNewRange: "请在可用范围内填写整数帧，起始帧必须小于结束帧。",
+    add: "加入子任务",
+    cancel: "取消",
     delete: "删除此片段",
     restore: "恢复此片段",
     deleteHint:
@@ -163,6 +187,7 @@ const t = (key) => copy[language][key] || key;
 let data,
   original,
   episodeIndex = 0,
+  episodePage = 0,
   segmentIndex = 0,
   camera = "base",
   clipEnd = null,
@@ -226,25 +251,17 @@ function safeURL(path) {
   return url.href;
 }
 
-function render() {
-  document.documentElement.lang = language;
-  document
-    .querySelectorAll("[data-i18n]")
-    .forEach((el) => (el.textContent = t(el.dataset.i18n)));
-  $("language").textContent = language === "en" ? "中文" : "English";
-  $("synthetic").hidden = !data.synthetic;
-  const active = data.episodes.flatMap((e) =>
-    e.segments.filter((s) => !s.deleted),
-  );
-  const deleted = data.episodes.reduce(
-    (n, e) => n + e.segments.filter((s) => s.deleted).length,
-    0,
-  );
-  $("episode-count").textContent = data.episodes.length;
-  $("progress").textContent =
-    `${active.filter((s) => s.reviewed).length}/${active.length} ${t("checked")} · ${deleted} ${t("deleted")}`;
+function renderEpisodes() {
+  const pageCount = Math.ceil(data.episodes.length / EPISODES_PER_PAGE);
+  const start = episodePage * EPISODES_PER_PAGE;
+  $("episode-pagination").hidden = pageCount <= 1;
+  $("episode-pagination").setAttribute("aria-label", t("episodePages"));
+  $("episode-page").textContent = `${episodePage + 1} / ${pageCount}`;
+  $("episode-prev").disabled = episodePage === 0;
+  $("episode-next").disabled = episodePage >= pageCount - 1;
   $("episodes").replaceChildren();
-  data.episodes.forEach((e, i) => {
+  data.episodes.slice(start, start + EPISODES_PER_PAGE).forEach((e, offset) => {
+    const i = start + offset;
     const button = document.createElement("button");
     button.className = i === episodeIndex ? "active" : "";
     const title = document.createElement("strong");
@@ -266,6 +283,37 @@ function render() {
     button.setAttribute("aria-current", i === episodeIndex ? "true" : "false");
     $("episodes").append(button);
   });
+}
+
+function changeEpisodePage(offset) {
+  const pageCount = Math.ceil(data.episodes.length / EPISODES_PER_PAGE);
+  const nextPage = episodePage + offset;
+  if (nextPage < 0 || nextPage >= pageCount) return;
+  episodePage = nextPage;
+  renderEpisodes();
+}
+
+$("episode-prev").onclick = () => changeEpisodePage(-1);
+$("episode-next").onclick = () => changeEpisodePage(1);
+
+function render() {
+  document.documentElement.lang = language;
+  document
+    .querySelectorAll("[data-i18n]")
+    .forEach((el) => (el.textContent = t(el.dataset.i18n)));
+  $("language").textContent = language === "en" ? "中文" : "English";
+  $("synthetic").hidden = !data.synthetic;
+  const active = data.episodes.flatMap((e) =>
+    e.segments.filter((s) => !s.deleted),
+  );
+  const deleted = data.episodes.reduce(
+    (n, e) => n + e.segments.filter((s) => s.deleted).length,
+    0,
+  );
+  $("episode-count").textContent = data.episodes.length;
+  $("progress").textContent =
+    `${active.filter((s) => s.reviewed).length}/${active.length} ${t("checked")} · ${deleted} ${t("deleted")}`;
+  renderEpisodes();
   $("episode-title").textContent =
     `Episode ${ep().episode_index.toString().padStart(3, "0")}`;
   $("episode-status").textContent = reviewedEpisode(ep())
@@ -365,7 +413,7 @@ function render() {
   $("note").value = s.review_note || "";
   $("excluded").checked = s.excluded;
   $("reviewed").checked = s.reviewed;
-  ["task-id", "note", "reviewed", "save", "split"].forEach(
+  ["task-id", "note", "reviewed", "save", "split", "add-subtask"].forEach(
     (id) => ($(id).disabled = s.deleted),
   );
   $("start").disabled =
@@ -495,6 +543,7 @@ function applyImport() {
       ).video_paths),
   );
   episodeIndex = 0;
+  episodePage = 0;
   segmentIndex = 0;
   clipEnd = null;
   $("conflict").close();
@@ -523,6 +572,60 @@ $("split").onclick = guard(() => {
   save();
   render();
 });
+$("add-subtask").onclick = guard(() => {
+  const next = ep().segments[segmentIndex + 1];
+  if (!next || next.deleted) return message(t("noFollowingInterval"), true);
+  clipEnd = null;
+  $("video").pause();
+  const select = $("new-task-id");
+  select.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = t("chooseTask");
+  placeholder.disabled = true;
+  select.append(placeholder);
+  data.training_subtask_definitions.forEach((task) => {
+    const option = document.createElement("option");
+    option.value = task.id;
+    option.textContent = `${task.id} · ${taskName(task)}`;
+    select.append(option);
+  });
+  select.value = "";
+  $("new-start").min = next.start;
+  $("new-start").max = next.end - 1;
+  $("new-end").min = next.start + 1;
+  $("new-end").max = next.end;
+  $("new-start").value = next.start;
+  // An unknown interval represents reserved space. For labeled intervals,
+  // require the reviewer to choose an end rather than replace it by default.
+  $("new-end").value = next.id === -1 ? next.end : "";
+  $("add-subtask-context").textContent =
+    `#${segmentIndex + 1} → ${t("availableRange")}: [${next.start}, ${next.end}) · ${taskName(next)}`;
+  $("add-subtask-error").hidden = true;
+  $("add-subtask-dialog").showModal();
+});
+$("cancel-add-subtask").onclick = () => $("add-subtask-dialog").close();
+$("add-subtask-form").onsubmit = (event) => {
+  event.preventDefault();
+  try {
+    const start = Number($("new-start").value), end = Number($("new-end").value);
+    const next = ep().segments[segmentIndex + 1];
+    if (!$("new-start").value.toString().trim() || !$("new-end").value.toString().trim() ||
+      !Number.isSafeInteger(start) || !Number.isSafeInteger(end) ||
+      !next || start < next.start || end > next.end || start >= end)
+      throw Error(t("invalidNewRange"));
+    if ($("new-task-id").value === "") throw Error(t("chooseTask"));
+    segmentIndex = addSegmentAfter(data, ep(), segmentIndex, {
+      id: Number($("new-task-id").value), start, end,
+    });
+    $("add-subtask-dialog").close();
+    save();
+    select(segmentIndex);
+  } catch (error) {
+    $("add-subtask-error").textContent = error.message;
+    $("add-subtask-error").hidden = false;
+  }
+};
 $("delete").onclick = () => {
   toggleDeletion(ep(), segmentIndex);
   clipEnd = null;

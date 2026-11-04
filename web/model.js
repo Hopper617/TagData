@@ -151,6 +151,31 @@ export function splitSegment(ep, index, frame) {
   ep.segments.splice(index + 1, 0, right);
 }
 
+export function addSegmentAfter(data, ep, index, { id, start, end }) {
+  const selected = ep.segments[index];
+  const next = ep.segments[index + 1];
+  require(selected && !selected.deleted, "Restore the selected interval before adding a subtask");
+  require(next && !next.deleted, "Reserve a retained interval after the selection first");
+  require(integer(start) && integer(end) &&
+    next.start <= start && start < end && end <= next.end,
+    "The new subtask must fit within the following interval");
+  const task = data.training_subtask_definitions.find((t) => t.id === id);
+  require(task, "Choose a subtask from the project task list");
+  const parts = [];
+  if (next.start < start)
+    parts.push({ ...clone(next), end: start, reviewed: false });
+  const addedIndex = index + 1 + parts.length;
+  parts.push({
+    id, text: task.text, start, end,
+    reviewed: false, excluded: false, deleted: false,
+    reason: "Subtask added during human review; verify its label and boundaries.",
+  });
+  if (end < next.end)
+    parts.push({ ...clone(next), start: end, reviewed: false });
+  ep.segments.splice(index + 1, 1, ...parts);
+  return addedIndex;
+}
+
 export function toggleDeletion(ep, index) {
   const s = ep.segments[index];
   if (s.deleted) {

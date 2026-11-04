@@ -162,6 +162,20 @@ nav small {
   color: var(--muted);
   font-size: 11px;
 }
+#episode-pagination:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+#episode-pagination button {
+  padding: 6px 9px;
+}
+#episode-page {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
 .aside-footer {
   margin-top: 25px;
   display: grid;
@@ -408,6 +422,11 @@ input[type="checkbox"] {
 .editor-actions button {
   flex: 1;
   font-size: 11px;
+}
+.add-subtask {
+  width: 100%;
+  margin-top: 10px;
+  color: var(--accent);
 }
 .editor p {
   font-size: 11px;

@@ -5,6 +5,7 @@ import {
   compatible,
   editSegment,
   splitSegment,
+  addSegmentAfter,
   toggleDeletion,
   exportReview,
   reviewedEpisode,
@@ -134,6 +135,62 @@ test("split invalidates both confirmations and preserves evidence/notes", () => 
   );
   assert.equal(ep.segments[3].review_note, "check wrist");
   assert.throws(() => splitSegment(ep, 2, 60));
+});
+test("add a subtask inside reserved space keeps source coverage and surrounding annotations", () => {
+  const [data, ep] = setup();
+  ep.segments[1].review_note = "reserved";
+  const before = structuredClone(ep.segments);
+  const index = addSegmentAfter(data, ep, 0, { id: 3, start: 45, end: 55 });
+  assert.equal(index, 2);
+  assert.deepEqual(ep.segments.map((s) => [s.id, s.start, s.end]), [
+    [0, 0, 40], [-1, 40, 45], [3, 45, 55], [-1, 55, 60], [3, 60, 120],
+  ]);
+  assert.deepEqual(ep.segments[0], before[0]);
+  assert.deepEqual(ep.segments[4], before[2]);
+  assert.equal(ep.segments[1].review_note, "reserved");
+  assert.equal(ep.segments[3].excluded, true);
+  assert.equal(ep.segments[2].excluded, false);
+  assert.equal(ep.segments[2].review_note, undefined);
+  assert.ok(ep.segments.slice(1, 4).every((s) => !s.reviewed));
+  assert.deepEqual(normalize(exportReview(data)).episodes[0].segments, ep.segments);
+});
+for (const [start, end, count] of [[40, 50, 4], [50, 60, 4], [40, 60, 3]])
+  test(`add at reserved boundaries [${start}, ${end}) never creates empty fragments`, () => {
+    const [data, ep] = setup();
+    const index = addSegmentAfter(data, ep, 0, { id: 0, start, end });
+    assert.equal(ep.segments.length, count);
+    assert.equal(ep.segments[index].start, start);
+    assert.equal(ep.segments[index].end, end);
+    normalize(exportReview(data));
+  });
+test("adding a subtask can carve explicitly chosen space from the next labeled interval", () => {
+  const [data, ep] = setup();
+  ep.segments[2].excluded = true;
+  const index = addSegmentAfter(data, ep, 1, { id: 0, start: 60, end: 80 });
+  assert.equal(index, 2);
+  assert.equal(ep.segments[2].excluded, false);
+  assert.deepEqual([ep.segments[3].id, ep.segments[3].start, ep.segments[3].end, ep.segments[3].excluded], [3, 80, 120, true]);
+  normalize(exportReview(data));
+});
+test("invalid additions and deleted ranges are rejected without changing annotations", () => {
+  for (const changes of [
+    { id: 0, start: 39, end: 50 }, { id: 0, start: 45, end: 61 },
+    { id: 0, start: 50, end: 50 }, { id: 0, start: 40.5, end: 50 },
+    { id: 9, start: 40, end: 50 }, { id: -1, start: 40, end: 50 },
+  ]) {
+    const [data, ep] = setup(), before = JSON.stringify(data);
+    assert.throws(() => addSegmentAfter(data, ep, 0, changes));
+    assert.equal(JSON.stringify(data), before);
+  }
+  for (const deletedIndex of [0, 1]) {
+    const [data, ep] = setup();
+    toggleDeletion(ep, deletedIndex);
+    const before = JSON.stringify(data);
+    assert.throws(() => addSegmentAfter(data, ep, 0, { id: 0, start: 40, end: 60 }));
+    assert.equal(JSON.stringify(data), before);
+  }
+  const [data, ep] = setup();
+  assert.throws(() => addSegmentAfter(data, ep, 2, { id: 0, start: 120, end: 121 }));
 });
 test("only fully reviewed episodes are exported", () => {
   const [data, ep] = setup();

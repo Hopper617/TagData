@@ -209,6 +209,75 @@ test("workbench handlers render, persist, resume, switch languages and import ex
     assert.equal($("note").value, ""); // fresh page selects Episode 0
     $("episodes").children[1].click();
     assert.equal($("note").value, "resume me");
+    assert.equal($("episode-pagination").hidden, true);
+
+    project.project_id = "pagination-test";
+    project.episodes = Array.from({ length: 12 }, (_, episode_index) => ({
+      ...structuredClone(project.episodes[0]),
+      episode_index,
+    }));
+    await import("../web/app.js?dom-pagination");
+    assert.equal($("episodes").children.length, 10);
+    assert.equal($("episode-page").textContent, "1 / 2");
+    assert.equal($("episode-prev").disabled, true);
+    $("episode-next").click();
+    assert.equal($("episodes").children.length, 2);
+    assert.equal($("episode-page").textContent, "2 / 2");
+    assert.equal($("episode-next").disabled, true);
+    assert.equal($("episode-title").textContent, "Episode 000");
+    $("episodes").children[0].click();
+    assert.equal($("episode-title").textContent, "Episode 010");
+    $("episode-prev").click();
+    assert.equal($("episodes").children.length, 10);
+    assert.equal($("episode-title").textContent, "Episode 010");
+    // Reserve space after the current selection, cancel without changes,
+    // then add a task and verify autosave/export/import/reload round trips.
+    $("episodes").children[0].click();
+    $("segments").children[1].click();
+    $("task-id").value = "-1";
+    $("task-id").onchange();
+    $("reviewed").checked = false;
+    $("editor-form").onsubmit({ preventDefault() {} });
+    $("segments").children[0].click();
+    const rowsBeforeAdd = $("segments").children.length;
+    $("add-subtask").click();
+    assert.equal($("add-subtask-dialog").open, true);
+    assert.equal($("new-start").value, 90);
+    const reservedEnd = Number($("new-end").value);
+    $("cancel-add-subtask").click();
+    assert.equal($("segments").children.length, rowsBeforeAdd);
+    $("add-subtask").click();
+    $("new-task-id").value = "0";
+    $("new-end").value = reservedEnd + 1;
+    $("add-subtask-form").onsubmit({ preventDefault() {} });
+    assert.equal($("add-subtask-error").hidden, false);
+    assert.equal($("segments").children.length, rowsBeforeAdd);
+    $("new-end").value = 100;
+    $("add-subtask-form").onsubmit({ preventDefault() {} });
+    assert.equal($("add-subtask-dialog").open, false);
+    assert.equal($("segments").children.length, rowsBeforeAdd + 1);
+    assert.equal($("start").value, 90);
+    assert.equal($("end").value, 100);
+    assert.equal($("reviewed").checked, false);
+    assert.equal($("excluded").checked, false);
+    $("export").click();
+    const added = JSON.parse(await downloads.at(-1).text());
+    assert.deepEqual(added.episodes[0].segments.slice(1, 3).map((s) => [s.id, s.start, s.end]), [[0, 90, 100], [-1, 100, reservedEnd]]);
+    await import("../web/app.js?dom-reload-added-subtask");
+    assert.equal($("segments").children.length, rowsBeforeAdd + 1);
+    $("import-file").files = [{ text: async () => JSON.stringify(added) }];
+    await $("import-file").onchange();
+    $("use-import").click();
+    assert.equal($("segments").children.length, rowsBeforeAdd + 1);
+    // A labeled successor requires an explicit end, and the last interval
+    // offers guidance instead of opening an unusable dialog.
+    $("add-subtask").click();
+    assert.equal($("new-end").value, "");
+    $("cancel-add-subtask").click();
+    $("segments").children.at(-1).click();
+    $("add-subtask").click();
+    assert.equal($("add-subtask-dialog").open, false);
+    assert.match($("status").textContent, /no retained interval/);
   } finally {
     URL.createObjectURL = create;
     URL.revokeObjectURL = revoke;

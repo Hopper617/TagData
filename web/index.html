@@ -33,6 +33,11 @@
         </div>
         <p id="progress" class="muted"></p>
         <nav id="episodes" aria-label="Episodes"></nav>
+        <div id="episode-pagination" role="group" hidden>
+          <button id="episode-prev" type="button" data-i18n="previousPage"></button>
+          <span id="episode-page" aria-live="polite"></span>
+          <button id="episode-next" type="button" data-i18n="nextPage"></button>
+        </div>
         <div class="aside-footer">
           <p data-i18n="localHint"></p>
           <button id="import" data-i18n="import"></button
@@ -152,6 +157,7 @@
               <button id="split" data-i18n="split"></button
               ><button id="delete" class="danger"></button>
             </div>
+            <button id="add-subtask" class="add-subtask" type="button" data-i18n="addSubtask"></button>
             <p class="muted" data-i18n="deleteHint"></p>
             <details>
               <summary data-i18n="evidence"></summary>
@@ -169,6 +175,23 @@
         <button id="keep-local" data-i18n="keepLocal"></button
         ><button id="use-import" class="primary" data-i18n="useImport"></button>
       </div>
+    </dialog>
+    <dialog id="add-subtask-dialog" aria-labelledby="add-subtask-title">
+      <h2 id="add-subtask-title" data-i18n="addSubtask"></h2>
+      <p id="add-subtask-context"></p>
+      <p data-i18n="addSubtaskHint"></p>
+      <form id="add-subtask-form">
+        <label><span data-i18n="task"></span><select id="new-task-id" required></select></label>
+        <div class="frame-inputs">
+          <label><span data-i18n="start"></span><input id="new-start" type="number" step="1" min="0" required /></label>
+          <label><span data-i18n="end"></span><input id="new-end" type="number" step="1" min="1" required /></label>
+        </div>
+        <p id="add-subtask-error" class="error" role="alert" hidden></p>
+        <div class="actions">
+          <button id="cancel-add-subtask" type="button" data-i18n="cancel"></button>
+          <button class="primary" type="submit" data-i18n="add"></button>
+        </div>
+      </form>
     </dialog>
     <script type="module" src="app.js"></script>
   </body>
