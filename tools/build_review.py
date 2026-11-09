@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from itertools import groupby
 import json
 from pathlib import Path
 import shutil
+import warnings
 
 from annotations import (
     check,
@@ -20,6 +22,58 @@ from annotations import (
 )
 
 VIEWS = ("base", "left_wrist", "right_wrist")
+TAKEOVER_COLUMNS = ("intervention.valid", "intervention.mode")
+TAKEOVER_MODES = {2: "free", 3: "grasp"}
+
+
+def takeover_intervals(dataset, info, episode):
+    """Read takeover ranges on the same frame grid as the review videos."""
+    if "data_path" not in info:
+        return []
+    index = episode["episode_index"]
+    relative = info["data_path"].format(
+        episode_index=index, episode_chunk=index // info.get("chunks_size", 1000)
+    )
+    source = (dataset / relative).resolve()
+    check(source.is_relative_to(dataset), "Parquet outside source root")
+    if not source.is_file():
+        return []
+    try:
+        import pyarrow.parquet as pq
+    except ModuleNotFoundError as error:
+        if error.name != "pyarrow":
+            raise
+        if set(TAKEOVER_COLUMNS) <= info.get("features", {}).keys():
+            warnings.warn("Install pyarrow to include DAgger takeover signals")
+        return []
+
+    with pq.ParquetFile(source) as parquet:
+        names = set(parquet.schema_arrow.names)
+        if not set(TAKEOVER_COLUMNS) <= names:
+            return []
+        check(
+            parquet.metadata.num_rows == episode["length"],
+            f"Episode {index}: intervention/video frame count mismatch",
+        )
+        columns = list(TAKEOVER_COLUMNS)
+        if "frame_index" in names:
+            columns.append("frame_index")
+        table = parquet.read(columns=columns)
+    if "frame_index" in columns:
+        check(
+            all(i == f for i, f in enumerate(table["frame_index"].to_pylist())),
+            f"Episode {index}: Parquet frame indices are not in source order",
+        )
+    valid, mode = (table[key].to_pylist() for key in TAKEOVER_COLUMNS)
+    modes = (TAKEOVER_MODES.get(m) if v is True else None for v, m in zip(valid, mode))
+    intervals = []
+    start = 0
+    for takeover_mode, frames in groupby(modes):
+        end = start + sum(1 for _ in frames)
+        if takeover_mode is not None:
+            intervals.append(dict(start=start, end=end, mode=takeover_mode))
+        start = end
+    return intervals
 
 
 def build(
@@ -130,8 +184,32 @@ def build(
                             dict(label=link.get("label", "Evidence"), path=asset)
                         )
                 s["evidence_links"] = links
+    applied = {}
+    review_path = dataset / "meta/intervention_review.json"
+    if review_path.is_file():
+        review = read_json(review_path)
+        check(
+            review["schema_version"] == 1 and review["fps"] == info["fps"],
+            "Applied intervention review schema or FPS mismatch",
+        )
+        applied = {e["episode_index"]: e for e in review["episodes"]}
     links = []
+    takeovers = {}
     for ep in payload["episodes"]:
+        i = ep["episode_index"]
+        intervals = takeover_intervals(dataset, info, ep)
+        saved = applied.get(i)
+        if saved:
+            check(
+                saved["length"] == ep["length"]
+                and (not intervals or intervals == saved["effective_takeovers"]),
+                f"Episode {i}: applied intervention review does not match the dataset",
+            )
+            # Keep recorded anchors so a review export can still be reapplied.
+            intervals = saved["recorded_takeovers"]
+            ep.setdefault("takeover_edits", saved["takeover_edits"])
+        if intervals:
+            takeovers[i] = intervals
         ep["video_paths"] = {}
         for view in VIEWS:
             source = video_path(dataset, info, ep["episode_index"], view).resolve(
@@ -156,7 +234,11 @@ def build(
         (output / "evidence").mkdir()
         for relative, source in assets.items():
             shutil.copyfile(source, output / relative)
-    write_json(output / "project.json", export_review(payload))
+    project = export_review(payload)
+    project.pop("takeovers", None)
+    if takeovers:
+        project["takeovers"] = takeovers
+    write_json(output / "project.json", project)
     return output
 
 

@@ -29,9 +29,10 @@ Open **http://127.0.0.1:8765/**. Use HTTP rather than opening `index.html` direc
 
 The workbench includes:
 
-- Episode progress, head/left-wrist/right-wrist video views and interval playback.
+- Review progress and an episode list with 10 episodes per page, plus head, left-wrist and right-wrist views and interval playback.
 - A timeline in original source coordinates, an interval table and an editor for task ID, integer boundaries, notes and confirmation.
-- Splitting at the playhead and explicit `-1` labels for unclear purpose, waiting or transitions.
+- Split at the playhead, insert an existing subtask into reserved space after the selected interval, or label unclear purpose, waiting and transitions as `-1`.
+- FREE and GRASP tracks for episodes with DAgger takeover data. Set start and end frames by typing them or using the playhead, restore recorded timing, and save timing edits with the review JSON.
 - Reversible deletion: deleted time stays visible on the timeline and **never becomes part of a neighboring task**.
 - Browser autosave, full-review JSON export/import with explicit draft-conflict resolution, and confirmed-episode JSONL export.
 - Evidence links, annotation reasons and boundary uncertainty when supplied by the annotation source.

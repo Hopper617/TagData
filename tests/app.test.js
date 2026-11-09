@@ -18,6 +18,10 @@ test("workbench handlers render, persist, resume, switch languages and import ex
       this.disabled = false;
       this.listeners = {};
     }
+    get valueAsNumber() {
+      return this.value === "" ? NaN : Number(this.value);
+    }
+    focus() {}
     append(...items) {
       this.children.push(...items);
     }
@@ -115,6 +119,8 @@ test("workbench handlers render, persist, resume, switch languages and import ex
     await import("../web/app.js?dom-test");
     assert.equal($("episode-title").textContent, "Episode 000");
     assert.equal($("segments").children.length, 8);
+    assert.equal($("takeovers").hidden, true);
+    assert.equal($("takeover-form").hidden, true);
     assert.equal(
       $("video").src,
       "http://test.invalid/media/episode_000000_base.mp4",
@@ -205,10 +211,79 @@ test("workbench handlers render, persist, resume, switch languages and import ex
     $("note").value = "resume me";
     $("save").click(); // submit is dispatched below by the mock
     $("editor-form").onsubmit({ preventDefault() {} });
+    project.takeovers = {
+      0: [
+        { start: 60, end: 75, mode: "free" },
+        { start: 75, end: 90, mode: "grasp" },
+      ],
+    };
     await import("../web/app.js?dom-reload");
     assert.equal($("note").value, ""); // fresh page selects Episode 0
+    assert.equal($("takeovers").hidden, false);
+    const [free, grasp] = $("takeover-markers").children;
+    assert.match(free.title, /FREE takeover · frame \[60, 75\)/);
+    assert.match(grasp.title, /GRASP takeover · frame \[75, 90\)/);
+    await $("video").play();
+    free.click();
+    assert.equal($("video").currentTime, 60 / 30);
+    assert.equal($("video").paused, true);
+    assert.equal($("start").value, 0); // seeking leaves the subtask selection intact
+    assert.equal($("takeover-form").hidden, false);
+    assert.equal($("takeover-start").value, 60);
+    assert.equal($("takeover-end").value, 75);
+    assert.match($("takeover-status").textContent, /FREE/);
+    $("video").currentTime = 75 / 30;
+    $("video").listeners.timeupdate();
+    assert.match($("takeover-status").textContent, /GRASP/);
+    $("takeover-seek-end").click();
+    assert.equal($("video").currentTime, 74 / 30);
+    $("video").currentTime = 57 / 30;
+    $("takeover-use-start").click();
+    $("video").currentTime = 72 / 30;
+    $("takeover-use-end").click();
+    $("cameras").children[1].click();
+    assert.equal($("takeover-start").value, 57);
+    assert.equal($("takeover-end").value, 73);
+    const draftKey = `subtask-review-v3:${project.project_id}`;
+    const draftBeforeTakeoverEdit = storage.get(draftKey);
+    $("takeover-end").value = 76;
+    $("takeover-form").onsubmit({ preventDefault() {} });
+    assert.equal($("takeover-error").hidden, false);
+    assert.equal(storage.get(draftKey), draftBeforeTakeoverEdit);
+    $("takeover-end").value = 73;
+    $("takeover-form").onsubmit({ preventDefault() {} });
+    assert.equal($("takeover-error").hidden, true);
+    assert.match($("takeover-markers").children[0].title, /\[57, 73\)/);
+    assert.match($("takeover-markers").children[1].title, /\[75, 90\)/);
+    assert.match($("takeover-original").textContent, /\[60, 75\)/);
+    $("export").click();
+    const adjusted = JSON.parse(await downloads.at(-1).text());
+    assert.equal(adjusted.takeovers, undefined);
+    assert.deepEqual(adjusted.episodes[0].takeover_edits, [
+      { source_start: 60, source_end: 75, mode: "free", start: 57, end: 73 },
+    ]);
+    await import("../web/app.js?dom-reload-adjusted-takeover");
+    assert.match($("takeover-markers").children[0].title, /\[57, 73\)/);
+    $("takeover-markers").children[0].click();
+    $("takeover-reset").click();
+    assert.match($("takeover-markers").children[0].title, /\[60, 75\)/);
+    assert.equal(JSON.parse(storage.get(draftKey)).episodes[0].takeover_edits, undefined);
+    $("takeover-close").click();
+    assert.equal($("takeover-form").hidden, true);
+    const stale = structuredClone(adjusted);
+    stale.episodes[0].takeover_edits[0].source_end = 74;
+    $("import-file").files = [{ text: async () => JSON.stringify(stale) }];
+    await $("import-file").onchange();
+    assert.match($("status").textContent, /does not match the recorded signal/);
+    assert.match($("takeover-markers").children[0].title, /\[60, 75\)/);
+    $("import-file").files = [{ text: async () => JSON.stringify(adjusted) }];
+    await $("import-file").onchange();
+    $("use-import").click();
+    assert.match($("takeover-markers").children[0].title, /\[57, 73\)/);
     $("episodes").children[1].click();
     assert.equal($("note").value, "resume me");
+    assert.equal($("takeovers").hidden, true);
+    assert.equal($("takeover-form").hidden, true);
     assert.equal($("episode-pagination").hidden, true);
 
     project.project_id = "pagination-test";

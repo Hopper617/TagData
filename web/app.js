@@ -1,6 +1,8 @@
 import {
   normalize,
   compatible,
+  takeoverRanges,
+  editTakeover,
   editSegment,
   splitSegment,
   addSegmentAfter,
@@ -28,6 +30,22 @@ const copy = {
     exportReviewed: "Export confirmed episodes",
     workspace: "Human review workspace",
     timeline: "Original source timeline",
+    takeoverTrack: "DAgger takeover signals",
+    takeoverFree: "FREE takeover",
+    takeoverGrasp: "GRASP takeover",
+    takeoverNone: "No takeover marked at the current frame",
+    takeoverSeek: "Select and jump to start",
+    takeoverHint: "Click a range to adjust its timing",
+    takeoverEdit: "Adjust takeover timing",
+    takeoverOriginal: "Recorded range",
+    takeoverBounds: "Available frame range",
+    takeoverUseStart: "Use current frame",
+    takeoverUseEnd: "Include current frame",
+    takeoverSave: "Save takeover timing",
+    takeoverSeekEnd: "Go to last frame",
+    takeoverReset: "Restore recorded timing",
+    takeoverClose: "Close",
+    takeoverInvalid: "Enter whole frames within the available range, with the start before the end.",
     showDeleted: "Show deleted",
     segments: "Segments",
     range: "Time · seconds",
@@ -107,6 +125,22 @@ const copy = {
     exportReviewed: "导出已确认 Episode",
     workspace: "人工审核工作台",
     timeline: "原始帧时间轴",
+    takeoverTrack: "DAgger 接管信号",
+    takeoverFree: "FREE 接管",
+    takeoverGrasp: "GRASP 接管",
+    takeoverNone: "当前帧无接管标记",
+    takeoverSeek: "选中并跳到起始帧",
+    takeoverHint: "点击色块调整时间",
+    takeoverEdit: "调整接管时间",
+    takeoverOriginal: "录制区间",
+    takeoverBounds: "可调整帧范围",
+    takeoverUseStart: "用当前帧作起点",
+    takeoverUseEnd: "用当前帧作末帧",
+    takeoverSave: "保存接管调整",
+    takeoverSeekEnd: "跳到末帧",
+    takeoverReset: "恢复录制时间",
+    takeoverClose: "关闭",
+    takeoverInvalid: "请输入可调整范围内的整数帧，起始帧要小于结束帧。",
     showDeleted: "显示已删除片段",
     segments: "子任务片段",
     range: "时间 · 秒",
@@ -186,6 +220,9 @@ if (!copy[language]) language = "en";
 const t = (key) => copy[language][key] || key;
 let data,
   original,
+  takeoverTracks,
+  activeTakeovers = [],
+  takeoverIndex = -1,
   episodeIndex = 0,
   episodePage = 0,
   segmentIndex = 0,
@@ -197,6 +234,11 @@ let data,
 const ep = () => data.episodes[episodeIndex];
 const seg = () => ep().segments[segmentIndex];
 const fmt = (frame) => (frame / data.fps).toFixed(2);
+const recordedTakeovers = () => takeoverTracks[ep().episode_index] ?? [];
+const playheadFrame = () =>
+  Math.min(ep().length - 1, Math.floor($("video").currentTime * data.fps + 1e-6));
+const takeoverLabel = ({ mode, start, end }) =>
+  `${t(mode === "free" ? "takeoverFree" : "takeoverGrasp")} · ${t("frame")} [${start}, ${end}) · ${fmt(start)}–${fmt(end)}s`;
 const taskName = (s) =>
   s.id === -1
     ? t("unknown")
@@ -272,6 +314,7 @@ function renderEpisodes() {
     button.append(title, detail);
     button.onclick = () => {
       episodeIndex = i;
+      takeoverIndex = -1;
       segmentIndex = Math.max(
         0,
         e.segments.findIndex((s) => !s.deleted),
@@ -295,6 +338,99 @@ function changeEpisodePage(offset) {
 
 $("episode-prev").onclick = () => changeEpisodePage(-1);
 $("episode-next").onclick = () => changeEpisodePage(1);
+
+function renderTakeovers() {
+  activeTakeovers = takeoverRanges(ep(), recordedTakeovers());
+  $("takeovers").hidden = activeTakeovers.length === 0;
+  $("timeline").className = activeTakeovers.length ? "timeline takeover-aligned" : "timeline";
+  const markers = $("takeover-markers");
+  markers.replaceChildren();
+  activeTakeovers.forEach((range, index) => {
+    const marker = document.createElement("button");
+    marker.type = "button";
+    marker.className = `takeover-${range.mode}`;
+    marker.style.left = `${(100 * range.start) / ep().length}%`;
+    marker.style.width = `${(100 * (range.end - range.start)) / ep().length}%`;
+    marker.title = `${takeoverLabel(range)} · ${t("takeoverSeek")}`;
+    marker.setAttribute("aria-label", marker.title);
+    marker.onclick = () => {
+      if (takeoverIndex !== index) {
+        takeoverIndex = index;
+        fillTakeoverEditor(range);
+        renderTakeoverEditor();
+      }
+      seekTakeoverFrame(range.start);
+    };
+    markers.append(marker);
+  });
+  renderTakeoverEditor();
+}
+
+function renderTakeoverEditor() {
+  const range = activeTakeovers[takeoverIndex];
+  $("takeover-form").hidden = !range;
+  Array.from($("takeover-markers").children).forEach((marker, index) =>
+    marker.setAttribute("aria-pressed", String(index === takeoverIndex)),
+  );
+  if (!range) return;
+  const recorded = recordedTakeovers()[takeoverIndex];
+  const min = activeTakeovers[takeoverIndex - 1]?.end ?? 0;
+  const max = activeTakeovers[takeoverIndex + 1]?.start ?? ep().length;
+  $("takeover-start").min = min;
+  $("takeover-start").max = max - 1;
+  $("takeover-end").min = min + 1;
+  $("takeover-end").max = max;
+  $("takeover-original").textContent = `${t("takeoverOriginal")} · ${takeoverLabel(recorded)}`;
+  $("takeover-bounds").textContent = `${t("takeoverBounds")} · [${min}, ${max})`;
+  $("takeover-reset").disabled = range.start === recorded.start && range.end === recorded.end;
+}
+
+function fillTakeoverEditor({ start, end }) {
+  $("takeover-start").value = start;
+  $("takeover-end").value = end;
+  $("takeover-error").hidden = true;
+}
+
+function commitTakeover(start, end) {
+  try {
+    editTakeover(ep(), recordedTakeovers(), takeoverIndex, start, end);
+  } catch {
+    $("takeover-error").textContent = t("takeoverInvalid");
+    $("takeover-error").hidden = false;
+    return;
+  }
+  fillTakeoverEditor({ start, end });
+  save();
+  renderTakeovers();
+  updateTime();
+}
+
+$("takeover-form").onsubmit = (event) => {
+  event.preventDefault();
+  commitTakeover($("takeover-start").valueAsNumber, $("takeover-end").valueAsNumber);
+};
+$("takeover-form").oninput = () => { $("takeover-error").hidden = true; };
+$("takeover-use-start").onclick = () => {
+  $("video").pause();
+  $("takeover-start").value = playheadFrame();
+  $("takeover-error").hidden = true;
+};
+$("takeover-use-end").onclick = () => {
+  $("video").pause();
+  $("takeover-end").value = playheadFrame() + 1;
+  $("takeover-error").hidden = true;
+};
+$("takeover-seek-end").onclick = () => seekTakeoverFrame(activeTakeovers[takeoverIndex].end - 1);
+$("takeover-reset").onclick = () => {
+  const { start, end } = recordedTakeovers()[takeoverIndex];
+  commitTakeover(start, end);
+};
+$("takeover-close").onclick = () => {
+  const marker = $("takeover-markers").children[takeoverIndex];
+  takeoverIndex = -1;
+  renderTakeoverEditor();
+  marker?.focus();
+};
 
 function render() {
   document.documentElement.lang = language;
@@ -393,6 +529,7 @@ function render() {
     };
     $("segments").append(row);
   });
+  renderTakeovers();
   $("duration").textContent =
     `${fmt(ep().length)}s · ${ep().length} ${t("frame")}`;
   $("segment-count").textContent =
@@ -477,6 +614,12 @@ function seek(time) {
     );
   else pendingSeek = time;
 }
+function seekTakeoverFrame(frame) {
+  clipEnd = null;
+  $("video").pause();
+  seek(frame / data.fps);
+  updateTime();
+}
 function loadVideo(time = 0, playing = false) {
   const video = $("video");
   $("video-error").hidden = true;
@@ -500,12 +643,19 @@ function loadVideo(time = 0, playing = false) {
 function updateTime() {
   if (!data) return;
   const v = $("video");
-  $("time-display").textContent =
-    `${v.currentTime.toFixed(2)}s · ${t("frame")} ${Math.min(ep().length - 1, Math.floor(v.currentTime * data.fps + 1e-6))}`;
   if (clipEnd != null && v.currentTime >= clipEnd / data.fps) {
     v.pause();
     v.currentTime = (clipEnd - 1) / data.fps;
     clipEnd = null;
+  }
+  const frame = playheadFrame();
+  $("time-display").textContent = `${v.currentTime.toFixed(2)}s · ${t("frame")} ${frame}`;
+  if (!$("takeovers").hidden) {
+    $("takeover-playhead").style.left = `${(100 * frame) / ep().length}%`;
+    const range = activeTakeovers.find((s) => s.start <= frame && frame < s.end);
+    const status = range ? takeoverLabel(range) : t("takeoverNone");
+    if ($("takeover-status").textContent !== status)
+      $("takeover-status").textContent = status;
   }
 }
 function download(name, text, mime) {
@@ -545,6 +695,7 @@ function applyImport() {
   episodeIndex = 0;
   episodePage = 0;
   segmentIndex = 0;
+  takeoverIndex = -1;
   clipEnd = null;
   $("conflict").close();
   save();
@@ -703,7 +854,7 @@ $("import-file").onchange = async () => {
   try {
     const file = $("import-file").files[0];
     if (!file) return;
-    pendingImport = normalize(JSON.parse(await file.text()));
+    pendingImport = normalize(JSON.parse(await file.text()), takeoverTracks);
     compatible(original, pendingImport);
     if (localDraft()) $("conflict").showModal();
     else applyImport();
@@ -729,13 +880,15 @@ try {
     );
   const response = await fetch("project.json");
   if (!response.ok) throw Error(`project.json: HTTP ${response.status}`);
-  original = normalize(await response.json());
+  const project = await response.json();
+  takeoverTracks = project.takeovers ?? {};
+  original = normalize(project, takeoverTracks);
   data = normalize(original);
   storageKey = `subtask-review-v3:${data.project_id || JSON.stringify([data.fps, data.training_subtask_definitions, data.episodes.map((e) => [e.episode_index, e.length])])}`;
   const draft = localDraft();
   if (draft) {
     try {
-      const restored = normalize(JSON.parse(draft));
+      const restored = normalize(JSON.parse(draft), takeoverTracks);
       compatible(original, restored);
       data = restored;
       data.episodes.forEach(

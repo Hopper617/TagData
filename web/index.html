@@ -84,9 +84,58 @@
           class="timeline"
           aria-label="Source frame timeline"
         ></div>
+        <section id="takeovers" aria-labelledby="takeover-title" hidden>
+          <div class="takeover-heading">
+            <div>
+              <strong id="takeover-title" data-i18n="takeoverTrack"></strong>
+              <span class="takeover-hint muted" data-i18n="takeoverHint"></span>
+            </div>
+            <div class="takeover-legend">
+              <span class="takeover-free" data-i18n="takeoverFree"></span>
+              <span class="takeover-grasp" data-i18n="takeoverGrasp"></span>
+            </div>
+          </div>
+          <div class="takeover-timeline" role="group" aria-labelledby="takeover-title">
+            <div id="takeover-markers"></div>
+            <span id="takeover-playhead" aria-hidden="true"></span>
+          </div>
+          <p id="takeover-status" class="mono"></p>
+        </section>
         <div class="timeline-labels">
           <span>0</span><span id="duration"></span>
         </div>
+        <form id="takeover-form" class="takeover-form" aria-labelledby="takeover-edit-title" hidden>
+          <div class="takeover-form-header">
+            <div>
+              <strong id="takeover-edit-title" data-i18n="takeoverEdit"></strong>
+              <p id="takeover-original" class="muted mono"></p>
+            </div>
+            <button id="takeover-close" type="button" data-i18n="takeoverClose"></button>
+          </div>
+          <div class="frame-inputs">
+            <div class="takeover-boundary">
+              <label for="takeover-start" data-i18n="start"></label>
+              <div class="takeover-frame-controls">
+                <input id="takeover-start" type="number" step="1" required />
+                <button id="takeover-use-start" type="button" data-i18n="takeoverUseStart"></button>
+              </div>
+            </div>
+            <div class="takeover-boundary">
+              <label for="takeover-end" data-i18n="end"></label>
+              <div class="takeover-frame-controls">
+                <input id="takeover-end" type="number" step="1" required />
+                <button id="takeover-use-end" type="button" data-i18n="takeoverUseEnd"></button>
+              </div>
+            </div>
+          </div>
+          <p id="takeover-bounds" class="muted mono"></p>
+          <p id="takeover-error" class="error" role="alert" hidden></p>
+          <div class="takeover-form-actions">
+            <button class="primary" type="submit" data-i18n="takeoverSave"></button>
+            <button id="takeover-seek-end" type="button" data-i18n="takeoverSeekEnd"></button>
+            <button id="takeover-reset" type="button" data-i18n="takeoverReset"></button>
+          </div>
+        </form>
         <div class="below">
           <section class="segments-panel">
             <div class="section-title">

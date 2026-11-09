@@ -5,8 +5,10 @@ function require(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-export function normalize(input) {
+export function normalize(input, takeoverTracks) {
   const data = clone(input);
+  // The generated workbench supplies the recording's takeover track.
+  delete data.takeovers;
   require(Number.isFinite(data.fps) && data.fps > 0, "Invalid fps");
   require(data.schema_version == null ||
     [2, 3].includes(data.schema_version), "Unsupported schema version");
@@ -74,6 +76,8 @@ export function normalize(input) {
       cursor = s.end;
     });
     require(cursor === ep.length, "Intervals do not cover the episode");
+    if (takeoverTracks)
+      takeoverRanges(ep, takeoverTracks[ep.episode_index] ?? []);
   });
   data.schema_version = 3;
   return data;
@@ -99,6 +103,53 @@ export function compatible(a, b) {
 
 export function reviewedEpisode(ep) {
   return ep.segments.every((s) => s.deleted || s.reviewed);
+}
+
+export function takeoverRanges(ep, source) {
+  if (ep.takeover_edits === undefined) return source;
+  require(Array.isArray(ep.takeover_edits), "Invalid takeover adjustments");
+  const ranges = [...source];
+  const edited = new Set();
+  for (const edit of ep.takeover_edits) {
+    require(edit && typeof edit === "object", "Invalid takeover adjustment");
+    const index = source.findIndex((range) =>
+      range.start === edit.source_start &&
+      range.end === edit.source_end &&
+      range.mode === edit.mode,
+    );
+    require(index >= 0 && !edited.has(index),
+      "Takeover adjustment does not match the recorded signal");
+    edited.add(index);
+    ranges[index] = { mode: edit.mode, start: edit.start, end: edit.end };
+  }
+  let previousEnd = 0;
+  for (const { start, end } of ranges) {
+    require(integer(start) && integer(end) &&
+      previousEnd <= start && start < end && end <= ep.length,
+      "Takeover boundaries must be within the episode and cannot overlap");
+    previousEnd = end;
+  }
+  return ranges;
+}
+
+export function editTakeover(ep, source, index, start, end) {
+  const recorded = source[index];
+  require(recorded, "Select a takeover interval");
+  const edits = (ep.takeover_edits ?? []).filter((e) =>
+    e.source_start !== recorded.start,
+  );
+  if (start !== recorded.start || end !== recorded.end) {
+    edits.push({
+      source_start: recorded.start,
+      source_end: recorded.end,
+      mode: recorded.mode,
+      start,
+      end,
+    });
+  }
+  takeoverRanges({ ...ep, takeover_edits: edits }, source);
+  if (edits.length) ep.takeover_edits = edits;
+  else delete ep.takeover_edits;
 }
 
 export function editSegment(data, ep, index, changes) {

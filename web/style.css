@@ -303,6 +303,121 @@ video {
     #393f39 10px
   ) !important;
 }
+.timeline.takeover-aligned {
+  gap: 0;
+}
+.timeline.takeover-aligned button {
+  min-width: 0;
+}
+.timeline.takeover-aligned button:not(.selected) {
+  box-shadow: inset -1px 0 var(--bg);
+}
+.takeover-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 10px 0 6px;
+  font-size: 12px;
+}
+.takeover-hint {
+  margin-inline-start: 8px;
+}
+.takeover-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--muted);
+}
+.takeover-free {
+  --takeover-color: #ffb566;
+}
+.takeover-grasp {
+  --takeover-color: #6ed3f1;
+}
+.takeover-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 2px;
+  background: var(--takeover-color);
+}
+.takeover-timeline {
+  position: relative;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.takeover-timeline button {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  border-radius: 3px;
+  background: var(--takeover-color);
+}
+.takeover-timeline button:hover,
+.takeover-timeline button:focus-visible,
+.takeover-timeline button[aria-pressed="true"] {
+  z-index: 1;
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+#takeover-playhead {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--text);
+  box-shadow: 0 0 0 1px var(--bg);
+  pointer-events: none;
+}
+#takeover-status {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.takeover-form[hidden] {
+  display: none;
+}
+.takeover-form {
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.takeover-form-header,
+.takeover-form-actions,
+.takeover-frame-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.takeover-form-header {
+  justify-content: space-between;
+}
+.takeover-form-actions {
+  flex-wrap: wrap;
+}
+.takeover-form p {
+  margin: 0;
+  font-size: 12px;
+}
+#takeover-original,
+.takeover-boundary label {
+  margin: 4px 0;
+}
+.takeover-form button {
+  font-size: 12px;
+  flex-shrink: 0;
+}
 .timeline-labels {
   display: flex;
   justify-content: space-between;
@@ -508,6 +623,9 @@ dialog .actions {
   }
 }
 @media (max-width: 700px) {
+  .takeover-form .frame-inputs {
+    grid-template-columns: 1fr;
+  }
   header {
     padding: 0 16px;
     height: 76px;

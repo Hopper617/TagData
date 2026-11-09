@@ -128,8 +128,9 @@ class Packaging(unittest.TestCase):
             pq.write_table(
                 pa.table(
                     {
-                        "intervention.valid": [True] * 180,
-                        "intervention.mode": [0] * 10 + [2] * 170,
+                        "frame_index": list(range(180)),
+                        "intervention.valid": [False] * 5 + [True] * 175,
+                        "intervention.mode": [2] * 5 + [0] * 5 + [2] * 50 + [3] * 120,
                     }
                 ),
                 source / "data/episode_000000.parquet",
@@ -143,6 +144,10 @@ class Packaging(unittest.TestCase):
             build(source, root / "map.json", root / "report", root / "review.json")
             built = json.loads((root / "report/project.json").read_text())
             self.assertTrue(built["episodes"][0]["segments"][0]["reviewed"])
+            self.assertEqual(built["takeovers"]["0"], [
+                dict(start=10, end=60, mode="free"),
+                dict(start=60, end=180, mode="grasp"),
+            ])
             self.assertNotIn(str(source), json.dumps(built))
             manifest = prepare(root / "review.json", source, root / "package")
             self.assertEqual(manifest["totals"]["retained_frames"], 170)
@@ -158,6 +163,21 @@ class Packaging(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "human review"):
                 prepare(root / "pending.json", source, root / "rejected")
             self.assertFalse((root / "rejected").exists())
+
+            effective = built["takeovers"]["0"]
+            recorded = [dict(effective[0], start=5), effective[1]]
+            edits = [dict(source_start=5, source_end=60, mode="free", start=10, end=60)]
+            write_json(
+                source / "meta/intervention_review.json",
+                dict(schema_version=1, fps=30, episodes=[
+                    dict(episode_index=0, length=180, recorded_takeovers=recorded,
+                         effective_takeovers=effective, takeover_edits=edits)
+                ]),
+            )
+            build(source, root / "map.json", root / "rebuilt")
+            rebuilt = json.loads((root / "rebuilt/project.json").read_text())
+            self.assertEqual(rebuilt["takeovers"]["0"], recorded)
+            self.assertEqual(rebuilt["episodes"][0]["takeover_edits"], edits)
 
     def test_roundtrip_and_mapping_validation(self):
         data = fixture()

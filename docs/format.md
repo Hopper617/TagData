@@ -47,6 +47,9 @@ Frames are zero-based integers; every interval is **[start, end)**. Times shown 
 - The workbench accepts the original candidate format using `subtasks` for the global map. It preserves previous v3 review state. Unsupported schemas or inconsistent bounds are rejected.
 - Fully confirmed means every retained interval is checked; deletions are already explicit decisions. Confirmation does **not** override `excluded` or make `-1` a training class.
 - Same-project imports keep video paths from the loaded project. The import dialog chooses between an existing local draft and the incoming review; it never silently merges competing revisions.
+- A generated workbench project can include a read-only `takeovers` object keyed by source episode ID. Each value lists `{start, end, mode}` ranges derived from valid Parquet rows with mode 2 (`free`) or 3 (`grasp`).
+- An episode's optional `takeover_edits` array stores changed ranges as `{source_start, source_end, mode, start, end}`. The first three fields identify a recorded interval. The adjusted `[start, end)` must stay within the episode and keep the recorded interval order without overlaps. Drafts and review exports keep these adjustments, and the workbench applies them to the loaded project's recorded ranges.
+- If reviewed timing has been applied to a dataset, `meta/intervention_review.json` stores the recorded intervals and applied edits so the workbench can rebuild the same track from the updated dataset.
 
 中文说明：全局映射包含项目全部类别，不能按某条 Episode 的任务子集重建。`segments` 和 `deleted_intervals` 的并集必须完整覆盖原始 Episode；未知、排除、删除有不同含义，但都不进入动作监督。导入保留审核和删除状态，视频地址使用当前项目的地址。已确认不等于可直接训练，训练端仍需处理专家动作掩码和完整动作窗口。
 
